@@ -1,79 +1,81 @@
-use aes_gcm::{
-    Aes256Gcm, Nonce,
-    aead::{Aead, KeyInit},
-};
-use anyhow::{Result, anyhow};
-use argon2::Argon2;
-use clap::{Parser, Subcommand};
-use rand::RngCore;
+mod cli;
+mod crypto;
+mod format;
 
-#[derive(Parser)]
-#[command(name = "lb")]
-#[command(version = "0.1.0")]
-#[command(about = "File Encryption Tool")]
-struct Cli {
-    #[command(subcommand)]
-    command: Commands,
-}
-
-#[derive(Subcommand)]
-enum Commands {
-    Encrypt { file: String },
-    Decrypt { file: String },
-}
-
-fn encrypt_data(data: &[u8], password: &str) -> Result<Vec<u8>> {
-    let mut salt = [0u8; 16];
-    rand::rng().fill_bytes(&mut salt);
-
-    let mut key = [0u8; 32];
-    Argon2::default()
-        .hash_password_into(password.as_bytes(), &salt, &mut key)
-        .map_err(|error| anyhow!("failed to derive encryption key: {error}"))?;
-
-    let mut nonce_bytes = [0u8; 12];
-    rand::rng().fill_bytes(&mut nonce_bytes);
-
-    let cipher = Aes256Gcm::new_from_slice(&key)
-        .map_err(|error| anyhow!("failed to initialize cipher: {error}"))?;
-    let nonce = Nonce::from_slice(&nonce_bytes);
-
-    let ciphertext = cipher
-        .encrypt(nonce, data)
-        .map_err(|error| anyhow!("failed to encrypt data: {error}"))?;
-
-    // Store:
-    // [salt][nonce][ciphertext]
-    let mut output = Vec::new();
-    output.extend_from_slice(&salt);
-    output.extend_from_slice(&nonce_bytes);
-    output.extend_from_slice(&ciphertext);
-
-    Ok(output)
-}
+use anyhow::{bail, Context, Result};
+use cli::{Cli, Commands};
+use clap::Parser;
 
 fn main() -> Result<()> {
     let cli = Cli::parse();
 
     match cli.command {
-        Commands::Encrypt { file } => {
-            println!("Encrypting {}", file);
+        Commands::Encrypt {
+            file,
+            delete_original,
+        } => encrypt_file(&file, delete_original),
+        Commands::Decrypt { file, output } => decrypt_file(&file, output),
+    }
+}
 
-            let data = std::fs::read(&file)?;
+fn encrypt_file(file: &str, delete_original: bool) -> Result<()> {
+    let data = std::fs::read(file).with_context(|| format!("failed to read {file}"))?;
 
-            println!("Password:");
-            let password = rpassword::read_password()?;
+    println!("Password: ");
+    let password = rpassword::read_password()?;
+    println!("Confirm password: ");
+    let confirm = rpassword::read_password()?;
 
-            let encrypted = encrypt_data(&data, &password)?;
-
-            std::fs::write(format!("{}.lb", file), encrypted)?;
-
-            println!("Encrypted successfully");
-        }
-        Commands::Decrypt { file } => {
-            println!("Decrypting {}", file);
-        }
+    if password != confirm {
+        bail!("passwords did not match");
+    }
+    if password.is_empty() {
+        bail!("password cannot be empty");
     }
 
+    let salt = crypto::generate_salt();
+    let nonce = crypto::generate_nonce();
+    let key = crypto::derive_key(&password, &salt)?;
+    let ciphertext = crypto::encrypt(&key, &nonce, &data)?;
+
+    let output_bytes = format::write(&salt, &nonce, &ciphertext);
+
+    let output_path = format!("{file}.lb");
+    std::fs::write(&output_path, output_bytes)
+        .with_context(|| format!("failed to write {output_path}"))?;
+
+    if delete_original {
+        std::fs::remove_file(file).with_context(|| format!("failed to delete {file}"))?;
+    }
+
+    println!("Encrypted -> {output_path}");
     Ok(())
+}
+
+fn decrypt_file(file: &str, output: Option<String>) -> Result<()> {
+    let data = std::fs::read(file).with_context(|| format!("failed to read {file}"))?;
+
+    let parsed = format::parse(&data)?;
+
+    println!("Password: ");
+    let password = rpassword::read_password()?;
+
+    let key = crypto::derive_key(&password, &parsed.salt)?;
+    let plaintext = crypto::decrypt(&key, &parsed.nonce, parsed.ciphertext)?;
+
+    let output_path = output.unwrap_or_else(|| default_output_path(file));
+    std::fs::write(&output_path, plaintext)
+        .with_context(|| format!("failed to write {output_path}"))?;
+
+    println!("Decrypted -> {output_path}");
+    Ok(())
+}
+
+/// Strips a trailing `.lb` extension if present, otherwise appends
+/// `.decrypted` so we never silently overwrite anything unexpected.
+fn default_output_path(file: &str) -> String {
+    match file.strip_suffix(".lb") {
+        Some(stripped) => stripped.to_string(),
+        None => format!("{file}.decrypted"),
+    }
 }
