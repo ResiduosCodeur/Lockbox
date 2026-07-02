@@ -15,8 +15,7 @@ use crate::format::{NONCE_LEN, SALT_LEN};
 
 /// Argon2 parameters. These are deliberately stronger than the library
 /// defaults (~19 MiB) because this tool protects user files, not just web
-/// login sessions. Tune these down if encryption feels too slow on your
-/// target hardware.
+/// login sessions.
 ///
 /// - memory: 64 MiB
 /// - iterations: 3
