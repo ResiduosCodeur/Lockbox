@@ -25,6 +25,6 @@ pub enum Commands {
 
         /// Output path. Defaults to the input path with `.lb` stripped.
         #[arg(short, long)]
-        output: Option<String>,
+        output: Option<String>, //custon output file name - optional
     },
 }

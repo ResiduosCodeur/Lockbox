@@ -1,9 +1,7 @@
 //! The `.lb` file format.
 //!
-//! Layout (all integers little-endian, though we don't have any multi-byte
-//! integers yet besides the version):
+//! Layout:
 //!
-//! ```text
 //! Offset  Size   Field
 //! 0       4      Magic bytes: b"LBOX"
 //! 4       1      Version (currently 1)
