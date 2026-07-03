@@ -11,20 +11,22 @@ pub struct Cli {
 
 #[derive(Subcommand)]
 pub enum Commands {
-    /// Encrypt a file, producing a sibling `<file>.lb`
+    /// Encrypt a file or directory, producing a sibling `<name>.lb`
     Encrypt {
-        file: String,
+        /// File or directory to encrypt
+        path: String,
 
-        /// Delete the original plaintext file after a successful encrypt
+        /// Delete the original file/directory after a successful encrypt
         #[arg(long)]
         delete_original: bool,
     },
-    /// Decrypt a `.lb` file, producing the original file
+    /// Decrypt a `.lb` file
     Decrypt {
-        file: String,
+        /// The .lb file to decrypt
+        path: String,
 
-        /// Output path. Defaults to the input path with `.lb` stripped.
+        /// Output path (default: strips `.lb` from the input name)
         #[arg(short, long)]
-        output: Option<String>, //custon output file name - optional
+        output: Option<String>,
     },
 }

@@ -1,14 +1,14 @@
 //! The `.lb` file format.
 //!
-//! Layout:
-//!
+//! ```text
 //! Offset  Size   Field
 //! 0       4      Magic bytes: b"LBOX"
 //! 4       1      Version (currently 1)
-//! 5       16     Salt (for Argon2)
-//! 21      12     Nonce (for AES-256-GCM)
-//! 33      N      Ciphertext (the GCM authentication tag is the last 16
-//!                 bytes of this region — aes-gcm appends it automatically)
+//! 5       1      Payload kind: 0 = single file, 1 = directory archive
+//! 6       16     Salt (Argon2)
+//! 22      12     Nonce (AES-256-GCM)
+//! 34      N      Ciphertext (GCM auth tag is the last 16 bytes, appended
+//!                automatically by the aes-gcm crate)
 //! ```
 
 use anyhow::{bail, Result};
@@ -19,31 +19,53 @@ pub const VERSION: u8 = 1;
 pub const SALT_LEN: usize = 16;
 pub const NONCE_LEN: usize = 12;
 
-/// Header fields extracted from an `.lb` file, plus a reference to the
-/// remaining ciphertext bytes.
+/// Whether the encrypted payload is a single file or a directory archive.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PayloadKind {
+    SingleFile = 0,
+    Directory  = 1,
+}
+
+impl PayloadKind {
+    fn from_byte(b: u8) -> Result<Self> {
+        match b {
+            0 => Ok(Self::SingleFile),
+            1 => Ok(Self::Directory),
+            _ => bail!("unknown payload kind byte: {b}"),
+        }
+    }
+}
+
+/// A parsed `.lb` file header plus a borrow of the ciphertext bytes.
 pub struct LbFile<'a> {
-    pub version: u8,
-    pub salt: [u8; SALT_LEN],
-    pub nonce: [u8; NONCE_LEN],
+    pub version:  u8,
+    pub kind:     PayloadKind,
+    pub salt:     [u8; SALT_LEN],
+    pub nonce:    [u8; NONCE_LEN],
     pub ciphertext: &'a [u8],
 }
 
-/// Serializes a complete `.lb` file: header + ciphertext.
-pub fn write(salt: &[u8; SALT_LEN], nonce: &[u8; NONCE_LEN], ciphertext: &[u8]) -> Vec<u8> {
-    let mut out = Vec::with_capacity(4 + 1 + SALT_LEN + NONCE_LEN + ciphertext.len());
+/// Serialise a complete `.lb` file: header + ciphertext.
+pub fn write(
+    kind: PayloadKind,
+    salt: &[u8; SALT_LEN],
+    nonce: &[u8; NONCE_LEN],
+    ciphertext: &[u8],
+) -> Vec<u8> {
+    let mut out = Vec::with_capacity(4 + 1 + 1 + SALT_LEN + NONCE_LEN + ciphertext.len());
     out.extend_from_slice(MAGIC);
     out.push(VERSION);
+    out.push(kind as u8);
     out.extend_from_slice(salt);
     out.extend_from_slice(nonce);
     out.extend_from_slice(ciphertext);
     out
 }
 
-/// Parses raw bytes read from disk into a `LbFile`, validating the magic
-/// bytes, version, and minimum length before handing back slices into the
-/// original buffer (no copying of the ciphertext).
+/// Parse raw bytes from disk, validating magic, version, and minimum length.
 pub fn parse(data: &[u8]) -> Result<LbFile<'_>> {
-    const HEADER_LEN: usize = 4 + 1 + SALT_LEN + NONCE_LEN;
+    // 4 magic + 1 version + 1 kind + 16 salt + 12 nonce
+    const HEADER_LEN: usize = 4 + 1 + 1 + SALT_LEN + NONCE_LEN;
 
     if data.len() < HEADER_LEN {
         bail!("file is too small to be a valid .lb file");
@@ -58,10 +80,12 @@ pub fn parse(data: &[u8]) -> Result<LbFile<'_>> {
         bail!("unsupported .lb file version: {version}");
     }
 
-    let mut salt = [0u8; SALT_LEN];
-    salt.copy_from_slice(&data[5..5 + SALT_LEN]);
+    let kind = PayloadKind::from_byte(data[5])?;
 
-    let nonce_start = 5 + SALT_LEN;
+    let mut salt = [0u8; SALT_LEN];
+    salt.copy_from_slice(&data[6..6 + SALT_LEN]);
+
+    let nonce_start = 6 + SALT_LEN;
     let mut nonce = [0u8; NONCE_LEN];
     nonce.copy_from_slice(&data[nonce_start..nonce_start + NONCE_LEN]);
 
@@ -72,10 +96,5 @@ pub fn parse(data: &[u8]) -> Result<LbFile<'_>> {
         bail!("file has no ciphertext payload");
     }
 
-    Ok(LbFile {
-        version,
-        salt,
-        nonce,
-        ciphertext,
-    })
+    Ok(LbFile { version, kind, salt, nonce, ciphertext })
 }
