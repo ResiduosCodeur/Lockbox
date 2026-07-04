@@ -1,6 +1,6 @@
 [package]
 name = "lb"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 
 [[bin]]
@@ -8,14 +8,15 @@ name = "lb"
 path = "src/main.rs"
 
 [dependencies]
-aes-gcm = "0.10"
-argon2 = "0.5"
-anyhow = "1.0"
-clap = { version = "4", features = ["derive"] }
-rand = "0.9"
+aes-gcm  = "0.10"
+argon2   = "0.5"
+anyhow   = "1.0"
+clap     = { version = "4", features = ["derive"] }
+indicatif = "0.17"
+rand     = "0.9"
 rpassword = "7"
-walkdir = "2"
-zeroize = "1.7"
+walkdir  = "2"
+zeroize  = "1.7"
 
 [profile.release]
 opt-level = 3
