@@ -9,6 +9,21 @@ Encrypt any file or folder with a password. The output is a `.lb` file that can 
 
 ## Installation
 
+### If you have [Rust installed](https://rustup.rs), then:
+
+```bash
+git clone https://github.com/yourusername/lockbox
+cd lockbox
+cargo install --path .
+```
+
+This compiles a release build and installs lb to ```~/.cargo/bin/``` so you can run it from anywhere.
+
+To reinstall after making code changes:
+
+```cargo install --path .```
+
+
 ### If you don't have Rust:
 
 1. Go to the [Releases](https://github.com/ResiduosCodeur/Lockbox/releases) page and download `lb.exe`
