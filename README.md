@@ -6,6 +6,96 @@ Encrypt any file or folder with a password. The output is a `.lb` file that can 
 
 ---
 
+
+## Installation
+
+### If you don't have Rust:
+
+1. Go to the [Releases](https://github.com/ResiduosCodeur/Lockbox/releases) page and download `lb.exe`
+2. Create a folder at `C:\Program Files\Lockbox` and place `lb.exe` inside it
+3. Search for **"Edit the system environment variables"** in the Windows search bar
+   ![alt text](assets/image.png)
+4. Click **Environment Variables** → under **System Variables**, click on **Path** → click **Edit**
+   ![alt text](assets/image-1.png)
+5. Click **New** and paste `C:\Program Files\Lockbox`, then click **OK** on everything
+   ![alt text](assets/image-2.png)
+6. Open a **new terminal** and run:
+
+```bash
+lb --version
+```
+
+It should print the installed version of LockBox :)
+
+---
+
+## Usage
+
+Go to the folder in which the file you want to encrypt exists and open a terminal
+
+### Encrypt a file
+
+```bash
+lb encrypt myfile.txt
+```
+
+You'll be prompted to enter and confirm a password. This produces `secret.txt.lb`.
+
+### Encrypt a directory
+
+```bash
+lb encrypt myfolder
+```
+
+Recursively packs and encrypts the entire folder into `myfolder.lb`.
+
+### Paths with spaces
+
+Wrap the path in quotes:
+
+```bash
+lb encrypt "my secret folder"
+lb encrypt "C:\Users\samar\Documents\my file.txt"
+```
+
+### Decrypt
+
+```bash
+lb decrypt myfile.txt.lb
+lb decrypt myfolder.lb
+```
+
+
+Strips the `.lb` extension and restores the original — a file for single files, a folder for directories.
+
+Decrypt to a custom path:
+
+```bash
+lb decrypt myfile.txt.lb -o output.txt
+lb decrypt myfolder.lb -o restored_folder
+```
+
+> **⚠️ Warning:** The .lb format uses AES-256-GCM authenticated encryption. If the encrypted file is modified, corrupted, or tampered with in any way, decryption will permanently fail — there is no recovery mechanism. Renaming the file is safe, but editing its contents will destroy it permanently. Always keep a backup of the original file before encrypting..
+
+### Delete the original after encrypting
+
+Simple delete (fast, OS-level removal):
+
+```bash
+lb encrypt myfile.txt --delete-original
+```
+
+Secure shred (3-pass overwrite: zeros → ones → random, then delete):
+
+```bash
+lb encrypt myfile.txt --shred
+```
+
+> **Note:** On SSDs with wear-levelling, overwriting in-place isn't guaranteed to hit
+> the same physical sectors. Full disk encryption is the strongest protection for SSDs.
+
+---
+
 ## How it works
 
 1. You provide a password
@@ -36,85 +126,6 @@ Offset   Size   Field
 
 ---
 
-## Installation
-
-Make sure you have [Rust installed](https://rustup.rs), then:
-
-```bash
-git clone https://github.com/yourusername/lockbox
-cd lockbox
-cargo install --path .
-```
-
-This compiles a release build and installs `lb` to `~/.cargo/bin/`, so you can run it from anywhere.
-
-To reinstall after making code changes:
-
-```bash
-cargo install --path .
-```
-
----
-
-## Usage
-
-### Encrypt a file
-
-```bash
-lb encrypt secret.txt
-```
-
-You'll be prompted to enter and confirm a password. This produces `secret.txt.lb`.
-
-### Encrypt a directory
-
-```bash
-lb encrypt myfolder
-```
-
-Recursively packs and encrypts the entire folder into `myfolder.lb`.
-
-### Paths with spaces
-
-Wrap the path in quotes:
-
-```bash
-lb encrypt "my secret folder"
-lb encrypt "C:\Users\samar\Documents\my file.txt"
-```
-
-### Decrypt
-
-```bash
-lb decrypt secret.txt.lb
-lb decrypt myfolder.lb
-```
-
-Strips the `.lb` extension and restores the original — a file for single files, a folder for directories.
-
-Decrypt to a custom path:
-
-```bash
-lb decrypt secret.txt.lb -o output.txt
-lb decrypt myfolder.lb -o restored_folder
-```
-
-### Delete the original after encrypting
-
-Simple delete (fast, OS-level removal):
-
-```bash
-lb encrypt secret.txt --delete-original
-```
-
-Secure shred (3-pass overwrite: zeros → ones → random, then delete):
-
-```bash
-lb encrypt secret.txt --shred
-```
-
-> **Note:** On SSDs with wear-levelling, overwriting in-place isn't guaranteed to hit
-> the same physical sectors. Full disk encryption is the strongest protection for SSDs.
 
 ### Inspect a `.lb` file without decrypting
 
@@ -135,11 +146,6 @@ Example output:
   Algorithm   : AES-256-GCM + Argon2id
 ```
 
-### Check version
-
-```bash
-lb --version
-```
 
 ---
 
