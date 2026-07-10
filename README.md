@@ -54,7 +54,7 @@ Go to the folder in which the file you want to encrypt exists and open a termina
 lb encrypt myfile.txt
 ```
 
-You'll be prompted to enter and confirm a password. This produces `secret.txt.lb`.
+You'll be prompted to enter and confirm a password. This produces `myfile.txt.lb`.
 
 ### Encrypt a directory
 
@@ -69,30 +69,11 @@ Recursively packs and encrypts the entire folder into `myfolder.lb`.
 Wrap the path in quotes:
 
 ```bash
+lb encrypt "my file.txt"
 lb encrypt "my secret folder"
-lb encrypt "C:\Users\samar\Documents\my file.txt"
 ```
 
-### Decrypt
-
-```bash
-lb decrypt myfile.txt.lb
-lb decrypt myfolder.lb
-```
-
-
-Strips the `.lb` extension and restores the original — a file for single files, a folder for directories.
-
-Decrypt to a custom path:
-
-```bash
-lb decrypt myfile.txt.lb -o output.txt
-lb decrypt myfolder.lb -o restored_folder
-```
-
-> **⚠️ Warning:** The .lb format uses AES-256-GCM authenticated encryption. If the encrypted file is modified, corrupted, or tampered with in any way, decryption will permanently fail — there is no recovery mechanism. Renaming the file is safe, but editing its contents will destroy it permanently. Always keep a backup of the original file before encrypting..
-
-### Delete the original after encrypting
+After this delete the original file manually or use the following commands to encrypt and delete together:
 
 Simple delete (fast, OS-level removal):
 
@@ -108,6 +89,24 @@ lb encrypt myfile.txt --shred
 
 > **Note:** On SSDs with wear-levelling, overwriting in-place isn't guaranteed to hit
 > the same physical sectors. Full disk encryption is the strongest protection for SSDs.
+
+### Decrypt
+
+```bash
+lb decrypt myfile.txt.lb
+lb decrypt myfolder.lb
+```
+
+Strips the `.lb` extension and restores the original — a file for single files, a folder for directories.
+
+Decrypt to a custom path:
+
+```bash
+lb decrypt myfile.txt.lb -o output.txt
+lb decrypt myfolder.lb -o restored_folder
+```
+
+> **⚠️ Warning:** The `.lb` format uses AES-256-GCM authenticated encryption. If the encrypted file is modified, corrupted, or tampered with in any way, decryption will permanently fail — there is no recovery mechanism. Renaming the file is safe, but editing its contents will destroy it permanently. Always keep a backup of the original file before encrypting.
 
 ---
 
