@@ -29,11 +29,11 @@ To reinstall after making code changes:
 1. Go to the [Releases](https://github.com/ResiduosCodeur/Lockbox/releases) page and download `lb.exe`
 2. Create a folder at `C:\Program Files\Lockbox` and place `lb.exe` inside it
 3. Search for **"Edit the system environment variables"** in the Windows search bar
-  <img src="assets/image.png" width="300">
+  <img src="assets/image.png" width="400">
 4. Click **Environment Variables** → under **System Variables**, click on **Path** → click **Edit**
-   <img src="assets/image-1.png" width="300">
+   <img src="assets/image-1.png" width="400">
 5. Click **New** and paste `C:\Program Files\Lockbox`, then click **OK** on everything
-  <img src="assets/image-2.png" width="300">
+  <img src="assets/image-2.png" width="400">
 6. Open a **new terminal** and run:
 
 ```bash
