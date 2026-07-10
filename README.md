@@ -9,7 +9,7 @@ Encrypt any file or folder with a password. The output is a `.lb` file that can 
 
 ## Installation
 
-### If you have [Rust installed](https://rustup.rs), then:
+### If you have [Rust installed](https://rustup.rs):
 
 ```bash
 git clone https://github.com/yourusername/lockbox
@@ -29,11 +29,11 @@ To reinstall after making code changes:
 1. Go to the [Releases](https://github.com/ResiduosCodeur/Lockbox/releases) page and download `lb.exe`
 2. Create a folder at `C:\Program Files\Lockbox` and place `lb.exe` inside it
 3. Search for **"Edit the system environment variables"** in the Windows search bar
-   ![alt text](assets/image.png)
+  <img src="assets/image.png" width="600">
 4. Click **Environment Variables** → under **System Variables**, click on **Path** → click **Edit**
-   ![alt text](assets/image-1.png)
+   <img src="assets/image-1.png" width="600">
 5. Click **New** and paste `C:\Program Files\Lockbox`, then click **OK** on everything
-   ![alt text](assets/image-2.png)
+  <img src="assets/image-2.png" width="600">
 6. Open a **new terminal** and run:
 
 ```bash
